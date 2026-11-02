@@ -2,216 +2,341 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aurielle Admin Panel</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; padding: 24px;
-      font-family: Arial, sans-serif;
-      background: #faf7f2; color: #302820;
-    }
-    .container { max-width: 950px; margin: auto; }
-    h1 { color: #8b6745; }
-    .panel {
-      background: white; padding: 22px; margin: 18px 0;
-      border-radius: 12px; box-shadow: 0 2px 12px #0000000d;
-    }
-    input, textarea, select {
-      width: 100%; padding: 12px; margin: 7px 0 14px;
-      border: 1px solid #ddd; border-radius: 7px;
-      font-size: 15px;
-    }
-    button {
-      padding: 11px 17px; border: 0; border-radius: 7px;
-      background: #8b6745; color: white; cursor: pointer;
-      margin: 4px;
-    }
-    button:hover { opacity: .85; }
-    button.danger { background: #a33d36; }
-    .hidden { display: none; }
-    .product {
-      display: flex; align-items: center; gap: 15px;
-      border-bottom: 1px solid #eee; padding: 14px 0;
-    }
-    .product img {
-      width: 75px; height: 75px; object-fit: cover;
-      border-radius: 8px; background: #eee;
-    }
-    .product-info { flex: 1; min-width: 0; }
-    .product-info p { margin: 5px 0; color: #777; }
-    .status { font-size: 12px; color: #777; }
-    #message { white-space: pre-wrap; margin: 12px 0; }
-    label { font-size: 14px; font-weight: bold; }
-    @media(max-width:600px) {
-      body { padding: 12px; }
-      .product { flex-wrap: wrap; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyDearStore Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f7f5f2;color:#292522}
+header{background:#241d19;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+header h2{margin:0;font-size:21px}
+main{max-width:1050px;margin:30px auto;padding:0 16px}
+.panel{background:white;padding:24px;border-radius:12px;box-shadow:0 3px 18px #0000000c;margin-bottom:20px}
+input,textarea,select{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #ddd;border-radius:7px;font:inherit}
+textarea{min-height:85px}
+button{border:0;border-radius:7px;padding:12px 17px;background:#342720;color:white;cursor:pointer;font-size:14px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.secondary{background:#eee;color:#292522}
+.danger{background:#a83232}
+.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.product{display:flex;align-items:center;gap:14px;border-top:1px solid #eee;padding:13px 0}
+.product img{width:65px;height:65px;object-fit:cover;border-radius:7px;background:#eee}
+.product-info{flex:1;min-width:0}
+.product-info p{margin:5px 0;color:#777;font-size:13px}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+#message{margin:12px 0;color:#8a4c22;white-space:pre-wrap}
+.small{font-size:13px;color:#777}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.product{align-items:flex-start}.actions button{padding:9px}}
+</style>
 </head>
 <body>
-<div class="container">
-  <h1>Aurielle Jewellery</h1>
-  <p>Store Admin Panel</p>
-  <div id="message"></div>
 
+<header>
+  <h2>MyDearStore Admin</h2>
+  <button id="logoutBtn" class="secondary hidden">Log out</button>
+</header>
+
+<main>
   <section id="loginPanel" class="panel">
     <h2>Admin Login</h2>
-    <form id="loginForm">
-      <label>Email</label>
-      <input id="email" type="email" required>
-      <label>Password</label>
-      <input id="password" type="password" required>
-      <button type="submit">Login</button>
-    </form>
+    <p class="small">Enter your registered admin email to receive a one-time verification code.</p>
+    <label for="email">Admin email</label>
+    <input id="email" type="email" value="alokenterprisesbbsr@gmail.com" autocomplete="email">
+    <button id="sendOtpBtn">Send OTP</button>
+
+    <div id="otpArea" class="hidden">
+      <label for="otp">6-digit verification code</label>
+      <input id="otp" type="text" inputmode="numeric" maxlength="6" placeholder="Enter OTP">
+      <button id="verifyOtpBtn">Verify and Login</button>
+    </div>
+    <div id="message" role="status"></div>
   </section>
 
-  <section id="adminPanel" class="hidden">
+  <section id="dashboard" class="hidden">
     <div class="panel">
-      <button id="logoutButton">Logout</button>
-      <h2 id="formTitle">Add New Product</h2>
-
+      <h2 id="formTitle">Add Product</h2>
       <form id="productForm">
-        <input id="productId" type="hidden">
+        <label>Product name</label>
+        <input id="name" required>
 
-        <label>Product Name</label>
-        <input id="name" required maxlength="150">
+        <div class="grid">
+          <div>
+            <label>Category</label>
+            <input id="category" placeholder="e.g. Necklace">
+          </div>
+          <div>
+            <label>Price (₹)</label>
+            <input id="price" type="number" min="0" step="0.01" required>
+          </div>
+        </div>
 
-        <label>Category</label>
-        <select id="category" required>
-          <option value="">Select category</option>
-          <option>Necklaces</option>
-          <option>Earrings</option>
-          <option>Rings</option>
-          <option>Bracelets</option>
-        </select>
-
-        <label>Price</label>
-        <input id="price" type="number" min="0" step="0.01" required>
-
-        <label>Original Price (optional)</label>
-        <input id="comparePrice" type="number" min="0" step="0.01">
+        <div class="grid">
+          <div>
+            <label>Compare-at price (₹)</label>
+            <input id="comparePrice" type="number" min="0" step="0.01">
+          </div>
+          <div>
+            <label>Product tag</label>
+            <input id="tag" placeholder="e.g. Bestseller">
+          </div>
+        </div>
 
         <label>Description</label>
-        <textarea id="description" rows="4"></textarea>
+        <textarea id="description"></textarea>
 
-        <label>Product Tag (optional)</label>
-        <input id="tag" placeholder="Bestseller, New Arrival, etc.">
-
-        <label>Product Photo</label>
+        <label>Product image</label>
         <input id="image" type="file" accept="image/*">
+        <p class="small">Choose an image to upload to your JEWELLERY storage bucket. You can leave this blank when editing to keep the existing image.</p>
 
-        <label>
-          <input id="active" type="checkbox" checked
-            style="width:auto;margin:0 6px 0 0">
-          Active — visible to customers
-        </label>
-        <br><br>
-
-        <button type="submit" id="saveButton">Save Product</button>
-        <button type="button" id="cancelButton" class="hidden">
-          Cancel Edit
-        </button>
+        <label><input id="active" type="checkbox" checked style="width:auto;margin-right:7px"> Product is active</label>
+        <div class="actions">
+          <button id="saveBtn" type="submit">Save Product</button>
+          <button id="cancelBtn" type="button" class="secondary hidden">Cancel Edit</button>
+        </div>
       </form>
+      <div id="formMessage" class="small"></div>
     </div>
 
     <div class="panel">
-      <h2>Your Products</h2>
-      <button id="refreshButton">Refresh Products</button>
-      <div id="productList">Loading products...</div>
+      <h2>Products</h2>
+      <button id="refreshBtn" class="secondary">Refresh products</button>
+      <div id="productsList"></div>
     </div>
   </section>
-</div>
+</main>
 
 <script>
 const SUPABASE_URL = "https://qusgyjjmgputbhznxjxx.supabase.co";
-const SUPABASE_KEY = "sb_publishable_vzathC1cV1CYe5PTG2vuvQ_swGZ3LcJ";
+const SUPABASE_KEY = "sb_publishable_vzathC1vC1VYe5PTG2vuvQ_swGZ3LcJ";
+
+const ADMIN_EMAIL = "alokenterprisesbbsr@gmail.com";
 const BUCKET = "JEWELLERY";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = id => document.getElementById(id);
+let editingId = null;
+let existingImageUrl = "";
 
-function message(text, error = false) {
+function showMessage(text) {
   $("message").textContent = text;
-  $("message").style.color = error ? "#b42318" : "#287a45";
+}
+function showFormMessage(text) {
+  $("formMessage").textContent = text;
 }
 
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;",
-    '"': "&quot;", "'": "&#39;"
-  })[char]);
+function showLogin() {
+  $("loginPanel").classList.remove("hidden");
+  $("dashboard").classList.add("hidden");
+  $("logoutBtn").classList.add("hidden");
+}
+function showDashboard() {
+  $("loginPanel").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  $("logoutBtn").classList.remove("hidden");
 }
 
 async function checkAdmin() {
-  const { data: { session } } = await db.auth.getSession();
-
-  if (!session) {
-    $("loginPanel").classList.remove("hidden");
-    $("adminPanel").classList.add("hidden");
-    return false;
-  }
-
   const { data, error } = await db.rpc("is_store_admin");
-
   if (error || data !== true) {
     await db.auth.signOut();
-    message("This account is not authorized as a store admin.", true);
-    $("loginPanel").classList.remove("hidden");
-    $("adminPanel").classList.add("hidden");
+    showLogin();
+    showMessage("This account is not authorised to access the store admin panel.");
     return false;
   }
-
-  $("loginPanel").classList.add("hidden");
-  $("adminPanel").classList.remove("hidden");
+  showDashboard();
   await loadProducts();
   return true;
 }
 
-$("loginForm").addEventListener("submit", async event => {
-  event.preventDefault();
-  message("Logging in...");
+// Send a one-time email code. Account creation is disabled.
+$("sendOtpBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim().toLowerCase();
 
-  const { error } = await db.auth.signInWithPassword({
-    email: $("email").value.trim(),
-    password: $("password").value
-  });
-
-  if (error) {
-    message(error.message, true);
+  if (email !== ADMIN_EMAIL) {
+    showMessage("This email is not authorised for admin login.");
     return;
   }
 
-  await checkAdmin();
+  $("sendOtpBtn").disabled = true;
+  showMessage("Sending your verification code...");
+
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false }
+  });
+
+  $("sendOtpBtn").disabled = false;
+
+  if (error) {
+    showMessage("Could not send OTP: " + error.message);
+    return;
+  }
+
+  $("otpArea").classList.remove("hidden");
+  showMessage("OTP sent. Check your inbox, including the spam folder.");
 });
 
-$("logoutButton").addEventListener("click", async () => {
-  await db.auth.signOut();
-  $("adminPanel").classList.add("hidden");
-  $("loginPanel").classList.remove("hidden");
-  message("Logged out.");
+// Verify the one-time code, then check admin membership.
+$("verifyOtpBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim().toLowerCase();
+  const token = $("otp").value.trim();
+
+  if (email !== ADMIN_EMAIL) {
+    showMessage("This email is not authorised.");
+    return;
+  }
+  if (!/^[0-9]{6}$/.test(token)) {
+    showMessage("Please enter the 6-digit OTP.");
+    return;
+  }
+
+  $("verifyOtpBtn").disabled = true;
+  showMessage("Verifying code...");
+
+  const { error } = await db.auth.verifyOtp({
+    email,
+    token,
+    type: "email"
+  });
+
+  $("verifyOtpBtn").disabled = false;
+
+  if (error) {
+    showMessage("OTP verification failed: " + error.message);
+    return;
+  }
+
+  showMessage("Checking admin permission...");
+  const allowed = await checkAdmin();
+
+  if (!allowed) return;
+  $("otp").value = "";
 });
+
+// Only show the dashboard for a signed-in, authorised admin.
+async function initialise() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    await checkAdmin();
+  } else {
+    showLogin();
+  }
+}
+
+$("logoutBtn").addEventListener("click", async () => {
+  await db.auth.signOut();
+  editingId = null;
+  showLogin();
+  $("otpArea").classList.add("hidden");
+  $("otp").value = "";
+  showMessage("You have been logged out.");
+});
+
+async function loadProducts() {
+  $("productsList").textContent = "Loading products...";
+
+  const { data, error } = await db
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    $("productsList").textContent = "Could not load products: " + error.message;
+    return;
+  }
+
+  const list = $("productsList");
+  list.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    list.textContent = "No products added yet.";
+    return;
+  }
+
+  data.forEach(product => {
+    const item = document.createElement("div");
+    item.className = "product";
+
+    const img = document.createElement("img");
+    img.alt = product.name || "Product";
+    img.src = product.image_url || "";
+    img.onerror = () => { img.style.visibility = "hidden"; };
+
+    const info = document.createElement("div");
+    info.className = "product-info";
+
+    const title = document.createElement("strong");
+    title.textContent = product.name || "Unnamed product";
+
+    const details = document.createElement("p");
+    details.textContent =
+      "₹" + product.price + " · " +
+      (product.category || "Uncategorised") + " · " +
+      (product.is_active ? "Active" : "Inactive");
+
+    info.append(title, details);
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const edit = document.createElement("button");
+    edit.textContent = "Edit";
+    edit.className = "secondary";
+    edit.addEventListener("click", () => editProduct(product));
+
+    const remove = document.createElement("button");
+    remove.textContent = "Delete";
+    remove.className = "danger";
+    remove.addEventListener("click", () => deleteProduct(product.id));
+
+    actions.append(edit, remove);
+    item.append(img, info, actions);
+    list.append(item);
+  });
+}
+
+function editProduct(product) {
+  editingId = product.id;
+  existingImageUrl = product.image_url || "";
+
+  $("formTitle").textContent = "Edit Product";
+  $("name").value = product.name || "";
+  $("category").value = product.category || "";
+  $("price").value = product.price ?? "";
+  $("comparePrice").value = product.compare_at_price ?? "";
+  $("tag").value = product.tag || "";
+  $("description").value = product.description || "";
+  $("active").checked = product.is_active !== false;
+  $("image").value = "";
+  $("saveBtn").textContent = "Update Product";
+  $("cancelBtn").classList.remove("hidden");
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function resetForm() {
+  editingId = null;
+  existingImageUrl = "";
+  $("productForm").reset();
+  $("active").checked = true;
+  $("formTitle").textContent = "Add Product";
+  $("saveBtn").textContent = "Save Product";
+  $("cancelBtn").classList.add("hidden");
+  showFormMessage("");
+}
+$("cancelBtn").addEventListener("click", resetForm);
 
 async function uploadImage(file) {
-  if (!file) return null;
-
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Please select an image file.");
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error("Image must be smaller than 5 MB.");
-  }
-
   const extension = file.name.split(".").pop().toLowerCase();
-  const path = `products/${crypto.randomUUID()}.${extension}`;
+  const safeExtension = /^[a-z0-9]+$/.test(extension) ? extension : "jpg";
+  const path = "products/" + crypto.randomUUID() + "." + safeExtension;
 
   const { error } = await db.storage
     .from(BUCKET)
-    .upload(path, file, { upsert: false });
+    .upload(path, file, { upsert: false, contentType: file.type });
 
   if (error) throw error;
 
@@ -221,127 +346,47 @@ async function uploadImage(file) {
 
 $("productForm").addEventListener("submit", async event => {
   event.preventDefault();
-  const button = $("saveButton");
-  button.disabled = true;
-  message("Saving product...");
+  $("saveBtn").disabled = true;
+  showFormMessage("Saving product...");
 
   try {
-    const id = $("productId").value;
-    let imageUrl = null;
+    let imageUrl = existingImageUrl;
+    const file = $("image").files[0];
 
-    if ($("image").files[0]) {
-      imageUrl = await uploadImage($("image").files[0]);
-    } else if (id) {
-      const existing = await db.from("products")
-        .select("image_url").eq("id", id).single();
-
-      if (existing.error) throw existing.error;
-      imageUrl = existing.data.image_url;
+    if (file) {
+      imageUrl = await uploadImage(file);
     }
 
     const product = {
       name: $("name").value.trim(),
-      category: $("category").value,
+      category: $("category").value.trim(),
       price: Number($("price").value),
       compare_at_price: $("comparePrice").value
         ? Number($("comparePrice").value) : null,
+      tag: $("tag").value.trim(),
       description: $("description").value.trim(),
-      tag: $("tag").value.trim() || null,
       image_url: imageUrl,
       is_active: $("active").checked
     };
 
-    const result = id
-      ? await db.from("products").update(product).eq("id", id)
-      : await db.from("products").insert(product);
+    let result;
+    if (editingId) {
+      result = await db.from("products").update(product).eq("id", editingId);
+    } else {
+      result = await db.from("products").insert(product);
+    }
 
     if (result.error) throw result.error;
 
-    message(id ? "Product updated successfully!" : "Product added successfully!");
+    showFormMessage("Product saved successfully.");
     resetForm();
     await loadProducts();
-
   } catch (error) {
-    message(error.message, true);
+    showFormMessage("Error: " + error.message);
   } finally {
-    button.disabled = false;
+    $("saveBtn").disabled = false;
   }
 });
-
-function resetForm() {
-  $("productForm").reset();
-  $("productId").value = "";
-  $("active").checked = true;
-  $("formTitle").textContent = "Add New Product";
-  $("saveButton").textContent = "Save Product";
-  $("cancelButton").classList.add("hidden");
-}
-
-$("cancelButton").addEventListener("click", resetForm);
-
-async function loadProducts() {
-  $("productList").textContent = "Loading products...";
-
-  const { data, error } = await db.from("products")
-    .select("*").order("created_at", { ascending: false });
-
-  if (error) {
-    $("productList").textContent = error.message;
-    return;
-  }
-
-  if (!data.length) {
-    $("productList").textContent = "No products added yet.";
-    return;
-  }
-
-  $("productList").innerHTML = data.map(p => `
-    <div class="product">
-      <img src="${escapeHTML(p.image_url || "")}"
-        alt="${escapeHTML(p.name)}">
-      <div class="product-info">
-        <strong>${escapeHTML(p.name)}</strong>
-        <p>${escapeHTML(p.category)} · ₹${Number(p.price).toFixed(2)}</p>
-        <span class="status">${p.is_active ? "Active" : "Inactive"}</span>
-      </div>
-      <button data-edit="${escapeHTML(p.id)}">Edit</button>
-      <button class="danger" data-delete="${escapeHTML(p.id)}">
-        Delete
-      </button>
-    </div>
-  `).join("");
-
-  $("productList").querySelectorAll("[data-edit]").forEach(button => {
-    button.addEventListener("click", () => {
-      const product = data.find(p => p.id === button.dataset.edit);
-      editProduct(product);
-    });
-  });
-
-  $("productList").querySelectorAll("[data-delete]").forEach(button => {
-    button.addEventListener("click", () => {
-      deleteProduct(button.dataset.delete);
-    });
-  });
-}
-
-function editProduct(p) {
-  $("productId").value = p.id;
-  $("name").value = p.name || "";
-  $("category").value = p.category || "";
-  $("price").value = p.price ?? "";
-  $("comparePrice").value = p.compare_at_price ?? "";
-  $("description").value = p.description || "";
-  $("tag").value = p.tag || "";
-  $("active").checked = p.is_active !== false;
-  $("image").value = "";
-
-  $("formTitle").textContent = "Edit Product";
-  $("saveButton").textContent = "Update Product";
-  $("cancelButton").classList.remove("hidden");
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
 
 async function deleteProduct(id) {
   if (!confirm("Are you sure you want to delete this product?")) return;
@@ -349,17 +394,16 @@ async function deleteProduct(id) {
   const { error } = await db.from("products").delete().eq("id", id);
 
   if (error) {
-    message(error.message, true);
+    alert("Could not delete product: " + error.message);
     return;
   }
 
-  message("Product deleted successfully.");
   await loadProducts();
 }
 
-$("refreshButton").addEventListener("click", loadProducts);
+$("refreshBtn").addEventListener("click", loadProducts);
 
-checkAdmin();
+initialise();
 </script>
 </body>
 </html>

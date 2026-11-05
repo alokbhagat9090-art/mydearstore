@@ -121,7 +121,7 @@ const SUPABASE_KEY = "sb_publishable_vzathC1cV1CYe5PTG2vuvQ_swGZ3LcJ";
 const ADMIN_EMAIL = "alokenterprisesbbsr@gmail.com";
 const BUCKET = "JEWELLERY";
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storageKey: "mds-admin-auth" } });
 
 const $ = id => document.getElementById(id);
 let editingId = null;
@@ -249,7 +249,7 @@ async function loadOrders() {
   if (!box) return;
   box.textContent = "Loading customer orders...";
   const {data,error} = await db.from("customer_orders")
-    .select("id,order_number,status,total,customer_name,phone,address,city,state,postal_code,created_at,customer_order_items(product_name,quantity,unit_price)")
+    .select("id,order_number,status,total,payment_method,customer_name,phone,address,city,state,postal_code,created_at,customer_order_items(product_name,quantity,unit_price)")
     .order("created_at",{ascending:false}).limit(100);
   if (error) { box.textContent = "Could not load orders: " + error.message; return; }
   if (!data || !data.length) { box.textContent = "No customer orders yet."; return; }
@@ -258,7 +258,7 @@ async function loadOrders() {
   data.forEach(order => {
     const card = document.createElement("div");
     card.style.cssText = "border-top:1px solid #eee;padding:15px 0";
-    const title = document.createElement("strong"); title.textContent = order.order_number + " · ₹" + Number(order.total).toFixed(2);
+    const title = document.createElement("strong"); title.textContent = order.order_number + " · ₹" + Number(order.total).toFixed(2) + " · Cash on Delivery";
     const details = document.createElement("p"); details.className = "small";
     details.textContent = order.customer_name + " · " + order.phone + " · " + order.address + ", " + order.city + ", " + order.state + " - " + order.postal_code;
     const items = document.createElement("p"); items.className = "small";

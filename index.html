@@ -309,15 +309,16 @@
   <div class="order-form-overlay" id="orderFormOverlay" onclick="if(event.target===this)closeOrderForm()">
     <form class="order-form" id="customerOrderForm">
       <div class="account-head"><h2 style="font-family:'Playfair Display',serif;margin:0">Delivery details</h2><button type="button" class="close" onclick="closeOrderForm()">×</button></div>
-      <p class="account-small">Submit your order request. The store will confirm availability and delivery details. Online payment is not enabled yet.</p>
+      <p class="account-small">Complete your delivery details and place your order. Pay in cash when your order is delivered.</p>
       <label for="orderName">Full name</label><input id="orderName" required>
       <label for="orderPhone">Mobile number</label><input id="orderPhone" type="tel" required>
       <label for="orderAddress">Full delivery address</label><textarea id="orderAddress" required></textarea>
       <label for="orderCity">City</label><input id="orderCity" required>
       <label for="orderState">State</label><input id="orderState" required>
-      <label for="orderPostal">PIN code</label><input id="orderPostal" inputmode="numeric" required>
+      <label for="orderPostal">PIN code</label><input id="orderPostal" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
+      <fieldset style="border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0"><legend style="font-weight:700;padding:0 6px">Payment method</legend><label style="display:flex;align-items:center;gap:9px"><input type="radio" name="paymentMethod" value="cash_on_delivery" checked required style="width:auto"> Cash on Delivery (COD)</label><p class="account-small" style="margin:7px 0 0">Pay cash to the delivery person when your parcel arrives. No online payment is taken now.</p></fieldset>
       <div id="orderTotal" class="account-small"></div>
-      <button class="btn" id="placeOrderBtn" type="submit" style="width:100%">Submit order request</button>
+      <button class="btn" id="placeOrderBtn" type="submit" style="width:100%">PLACE COD ORDER</button>
       <p id="orderMessage" class="account-small" role="status"></p>
     </form>
   </div>
@@ -329,7 +330,7 @@
     // It is intended for browser use; database access must remain protected by RLS policies.
     const SUPABASE_URL = "https://qusgyjjmgputbhznxjxx.supabase.co";
     const SUPABASE_KEY = "sb_publishable_vzathC1cV1CYe5PTG2vuvQ_swGZ3LcJ";
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storageKey: "mds-customer-auth" } });
 
     let products = [];
     let cart = [];
@@ -423,12 +424,12 @@
     async function loadCustomerOrders() {
       const box = document.getElementById("customerOrdersTab");
       box.innerHTML = '<div class="account-empty">Loading your orders…</div>';
-      const { data, error } = await db.from("customer_orders").select("id,order_number,status,total,created_at,customer_order_items(product_name,quantity,unit_price,image_url)").eq("user_id", currentUser.id).order("created_at", {ascending:false});
+      const { data, error } = await db.from("customer_orders").select("id,order_number,status,total,payment_method,created_at,customer_order_items(product_name,quantity,unit_price,image_url)").eq("user_id", currentUser.id).order("created_at", {ascending:false});
       if (error) { box.innerHTML = '<div class="account-empty">Orders could not load. Please contact the store.</div>'; console.error(error); return; }
       if (!data || !data.length) { box.innerHTML = '<div class="account-empty">You have no orders yet. Your order history and tracking will appear here.</div>'; return; }
       box.innerHTML = data.map(o => `<article class="account-card">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong>${escapeHtml(o.order_number)}</strong><span class="status-pill">${escapeHtml(String(o.status).replaceAll("_"," "))}</span></div>
-        <div class="account-small">${new Date(o.created_at).toLocaleDateString("en-IN")} · ${money(o.total)}</div>
+        <div class="account-small">${new Date(o.created_at).toLocaleDateString("en-IN")} · ${money(o.total)} · Cash on Delivery</div>
         ${(o.customer_order_items || []).map(i => `<div class="account-small">${escapeHtml(i.product_name)} × ${i.quantity}</div>`).join("")}
       </article>`).join("");
     }
@@ -490,7 +491,7 @@
       document.getElementById("orderState").value = profile.state || "";
       document.getElementById("orderPostal").value = profile.postal_code || "";
       const total = cart.reduce((sum,p)=>sum+Number(p.price)*p.qty,0);
-      document.getElementById("orderTotal").textContent = "Order total: " + money(total) + " · Payment is not collected online.";
+      document.getElementById("orderTotal").textContent = "Order total: " + money(total) + " · Payment: Cash on Delivery";
       document.getElementById("orderFormOverlay").classList.add("open");
     }
     function closeOrderForm() { document.getElementById("orderFormOverlay").classList.remove("open"); }
@@ -503,11 +504,13 @@
         address:document.getElementById("orderAddress").value.trim(),city:document.getElementById("orderCity").value.trim(),
         state:document.getElementById("orderState").value.trim(),postal_code:document.getElementById("orderPostal").value.trim()};
       const items = cart.map(p=>({product_id:String(p.id),quantity:p.qty}));
+      const paymentMethod = document.querySelector("input[name=paymentMethod]:checked")?.value;
+      if (paymentMethod !== "cash_on_delivery") { button.disabled = false; document.getElementById("orderMessage").textContent = "Please select Cash on Delivery."; return; }
       const {data,error} = await db.rpc("place_customer_order",{p_items:items,p_customer:customer});
       button.disabled = false;
       if (error) { document.getElementById("orderMessage").textContent = "Order could not be submitted: " + error.message; return; }
       cart = []; renderCart(); closeOrderForm();
-      showNotice("Order request " + (data?.order_number || "") + " submitted successfully.");
+      showNotice("COD order " + (data?.order_number || "") + " placed successfully.");
       accountTabShow("orders"); openAccount();
     });
 
@@ -649,7 +652,7 @@
         <div class="cart-total"><span>Subtotal</span><span>${money(total)}</span></div>
         <p style="font-size:10px;color:var(--muted);line-height:1.6">Shipping and taxes, if applicable, will be confirmed before your order.</p>
         <button class="btn checkout" onclick="checkout()">CONTINUE TO ORDER · ${money(total)}</button>
-        <p style="font-size:10px;color:var(--muted);margin-top:10px">Online payment and order placement are not connected yet. Please contact the store to place an order.</p>`;
+        <p style="font-size:10px;color:var(--muted);margin-top:10px">Cash on Delivery is available at checkout. Add items to your bag to place a COD order.</p>`;
     }
     function toggleCart(open) {
       document.getElementById("cartOverlay").classList.toggle("open", open);

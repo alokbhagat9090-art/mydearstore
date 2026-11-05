@@ -2,199 +2,452 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>My Dear Store — Visual Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyDearStore Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--ink:#382a25;--muted:#786960;--cream:#fbf7f1;--paper:#fffdf9;--rose:#b77e69;--brown:#67483b;--line:#eadfd5}
-*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,sans-serif}
-.top{background:var(--brown);color:white;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
-.brand{font-family:Georgia,serif;font-size:20px}.brand span{color:#edc9b7}
-button{border:0;border-radius:6px;padding:11px 15px;background:var(--brown);color:white;font:inherit;cursor:pointer}
-button:disabled{opacity:.55;cursor:wait}.light{background:#f1e6dc;color:var(--ink)}.danger{background:#a43d36}
-main{max-width:1500px;margin:22px auto;padding:0 16px}
-.panel{background:white;border:1px solid var(--line);border-radius:12px;padding:24px;box-shadow:0 8px 28px #4b30200b}
-.login{max-width:460px;margin:9vh auto}.muted{color:var(--muted);font-size:13px;line-height:1.6}
-label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}
-input,textarea,select{width:100%;padding:12px;border:1px solid #d9cec5;border-radius:6px;font:inherit;background:#fffdfb;color:var(--ink)}
-textarea{min-height:90px;resize:vertical}.hidden{display:none!important}
-.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.frame-wrap{height:calc(100vh - 155px);min-height:600px;background:white;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-iframe{width:100%;height:100%;border:0;background:white}
-.status{font-size:13px;color:var(--rose);min-height:20px;margin-top:10px}
-.modal-backdrop{position:fixed;inset:0;background:#211713a8;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
-.modal{width:min(620px,100%);max-height:92vh;overflow:auto;background:var(--paper);border-radius:12px;padding:22px;box-shadow:0 20px 70px #0004}
-.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.modal-head h2{font-family:Georgia,serif;margin:0}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}
-.preview-note{font-size:12px;color:var(--muted)}
-@media(max-width:650px){.top{padding:11px 13px}.brand{font-size:17px}.frame-wrap{height:calc(100vh - 145px);min-height:520px}.panel{padding:18px}.form-grid{grid-template-columns:1fr}}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f7f5f2;color:#292522}
+header{background:#241d19;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+header h2{margin:0;font-size:21px}
+main{max-width:1050px;margin:30px auto;padding:0 16px}
+.panel{background:white;padding:24px;border-radius:12px;box-shadow:0 3px 18px #0000000c;margin-bottom:20px}
+input,textarea,select{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #ddd;border-radius:7px;font:inherit}
+textarea{min-height:85px}
+button{border:0;border-radius:7px;padding:12px 17px;background:#342720;color:white;cursor:pointer;font-size:14px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.secondary{background:#eee;color:#292522}
+.danger{background:#a83232}
+.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.product{display:flex;align-items:center;gap:14px;border-top:1px solid #eee;padding:13px 0}
+.product img{width:65px;height:65px;object-fit:cover;border-radius:7px;background:#eee}
+.product-info{flex:1;min-width:0}
+.product-info p{margin:5px 0;color:#777;font-size:13px}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+#message{margin:12px 0;color:#8a4c22;white-space:pre-wrap}
+.small{font-size:13px;color:#777}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.product{align-items:flex-start}.actions button{padding:9px}}
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="brand">MY DEAR <span>STORE</span> <small style="font:11px Arial;opacity:.8">· VISUAL ADMIN</small></div>
-  <button id="logoutBtn" class="light hidden">Log out</button>
+
+<header>
+  <h2>MyDearStore Admin</h2>
+  <button id="logoutBtn" class="secondary hidden">Log out</button>
 </header>
+
 <main>
-  <section id="loginPanel" class="panel login">
-    <h2 style="font-family:Georgia,serif">Welcome back</h2>
-    <p class="muted">Sign in to manage the same storefront your customers see. A one-time code will be sent to your registered admin email.</p>
+  <section id="loginPanel" class="panel">
+    <h2>Admin Login</h2>
+    <p class="small">Enter your registered admin email to receive a one-time verification code.</p>
     <label for="email">Admin email</label>
     <input id="email" type="email" value="alokenterprisesbbsr@gmail.com" autocomplete="email">
-    <button id="sendOtpBtn" style="width:100%;margin-top:12px">Send OTP</button>
+    <button id="sendOtpBtn">Send OTP</button>
+
     <div id="otpArea" class="hidden">
-      <label for="otp">6-digit OTP</label>
-      <input id="otp" inputmode="numeric" maxlength="6" placeholder="Enter verification code">
-      <button id="verifyOtpBtn" style="width:100%;margin-top:12px">Verify and open store editor</button>
+      <label for="otp">6-digit verification code</label>
+      <input id="otp" type="text" inputmode="numeric" maxlength="6" placeholder="Enter OTP">
+      <button id="verifyOtpBtn">Verify and Login</button>
     </div>
-    <div id="loginMessage" class="status" role="status"></div>
+    <div id="message" role="status"></div>
   </section>
 
-  <section id="editor" class="hidden">
-    <div class="toolbar">
-      <div><strong>Live storefront preview</strong><div class="preview-note">This is your customer website. Editing controls are visible only in this admin view.</div></div>
-      <div class="actions" style="margin:0">
-        <button id="addBtn">＋ Add product</button>
-        <button id="refreshBtn" class="light">Refresh preview</button>
-      </div>
+  <section id="dashboard" class="hidden">
+    <div class="panel">
+      <h2 id="formTitle">Add Product</h2>
+      <form id="productForm">
+        <label>Product name</label>
+        <input id="name" required>
+
+        <div class="grid">
+          <div>
+            <label>Category</label>
+            <input id="category" placeholder="e.g. Necklace">
+          </div>
+          <div>
+            <label>Price (₹)</label>
+            <input id="price" type="number" min="0" step="0.01" required>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div>
+            <label>Compare-at price (₹)</label>
+            <input id="comparePrice" type="number" min="0" step="0.01">
+          </div>
+          <div>
+            <label>Product tag</label>
+            <input id="tag" placeholder="e.g. Bestseller">
+          </div>
+        </div>
+
+        <label>Description</label>
+        <textarea id="description"></textarea>
+
+        <label>Product image</label>
+        <input id="image" type="file" accept="image/*">
+        <p class="small">Choose an image to upload to your JEWELLERY storage bucket. You can leave this blank when editing to keep the existing image.</p>
+
+        <label><input id="active" type="checkbox" checked style="width:auto;margin-right:7px"> Product is active</label>
+        <div class="actions">
+          <button id="saveBtn" type="submit">Save Product</button>
+          <button id="cancelBtn" type="button" class="secondary hidden">Cancel Edit</button>
+        </div>
+      </form>
+      <div id="formMessage" class="small"></div>
     </div>
-    <div class="frame-wrap"><iframe id="storeFrame" title="Live MY DEAR STORE preview" src="/"></iframe></div>
-    <p class="preview-note">Save product changes to Supabase. The storefront preview refreshes automatically; customers see updated products without a Vercel deployment.</p>
-    <div id="editorMessage" class="status" role="status"></div>
+
+
+    <div class="panel">
+      <h2>Customer Orders & Tracking</h2>
+      <p class="small">Update an order status here. Customers can see the latest status in My Account → My Orders.</p>
+      <button id="ordersRefreshBtn" class="secondary" type="button">Refresh orders</button>
+      <div id="ordersList" style="margin-top:14px"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Products</h2>
+      <button id="refreshBtn" class="secondary">Refresh products</button>
+      <div id="productsList"></div>
+    </div>
   </section>
 </main>
 
-<div id="modalBackdrop" class="modal-backdrop hidden">
-  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-head"><h2 id="modalTitle">Add product</h2><button id="closeModal" class="light" type="button">✕</button></div>
-    <form id="productForm">
-      <label for="name">Product name</label><input id="name" required maxlength="150">
-      <div class="form-grid">
-        <div><label for="category">Category</label><input id="category" placeholder="Handmade, Imitation, Daily Wear…"></div>
-        <div><label for="price">Selling price (₹)</label><input id="price" type="number" min="0" step="0.01" required></div>
-        <div><label for="comparePrice">Compare-at price (₹)</label><input id="comparePrice" type="number" min="0" step="0.01"></div>
-        <div><label for="tag">Product tag</label><input id="tag" placeholder="Bestseller, New…"></div>
-      </div>
-      <label for="description">Description</label><textarea id="description"></textarea>
-      <label for="image">Product photo</label><input id="image" type="file" accept="image/*">
-      <p class="muted">Choose a new photo to replace the current one. Leave blank to keep the existing photo.</p>
-      <label style="display:flex;align-items:center;gap:8px;font-weight:500"><input id="active" type="checkbox" checked style="width:auto"> Show this product on the customer website</label>
-      <div class="actions">
-        <button id="saveBtn" type="submit">Save product</button>
-        <button id="cancelBtn" class="light" type="button">Cancel</button>
-        <button id="deleteBtn" class="danger hidden" type="button">Delete product</button>
-      </div>
-      <div id="formMessage" class="status" role="status"></div>
-    </form>
-  </section>
-</div>
-
 <script>
-const SUPABASE_URL="https://qusgyjjmgputbhznxjxx.supabase.co";
-const SUPABASE_KEY="sb_publishable_vzathC1cV1CYe5PTG2vuvQ_swGZ3LcJ";
-const ADMIN_EMAIL="alokenterprisesbbsr@gmail.com";
-const BUCKET="JEWELLERY";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const $=id=>document.getElementById(id);
-let products=[],editingId=null,existingImageUrl="",observer=null;
+const SUPABASE_URL = "https://qusgyjjmgputbhznxjxx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_vzathC1cV1CYe5PTG2vuvQ_swGZ3LcJ";
 
-function loginMessage(t){$("loginMessage").textContent=t}
-function formMessage(t){$("formMessage").textContent=t}
-function showLogin(){$("loginPanel").classList.remove("hidden");$("editor").classList.add("hidden");$("logoutBtn").classList.add("hidden")}
-async function checkAdmin(){
- const {data,error}=await db.rpc("is_store_admin");
- if(error||data!==true){await db.auth.signOut();showLogin();loginMessage("This account is not authorised to access the admin panel.");return false}
- $("loginPanel").classList.add("hidden");$("editor").classList.remove("hidden");$("logoutBtn").classList.remove("hidden");
- await loadProducts();return true;
-}
-$("sendOtpBtn").addEventListener("click",async()=>{
- const email=$("email").value.trim().toLowerCase();
- if(email!==ADMIN_EMAIL){loginMessage("This email is not authorised.");return}
- $("sendOtpBtn").disabled=true;loginMessage("Sending OTP…");
- const {error}=await db.auth.signInWithOtp({email,options:{shouldCreateUser:false}});
- $("sendOtpBtn").disabled=false;
- if(error){loginMessage("Could not send OTP: "+error.message);return}
- $("otpArea").classList.remove("hidden");loginMessage("OTP sent. Check your inbox and spam folder.");
-});
-$("verifyOtpBtn").addEventListener("click",async()=>{
- const email=$("email").value.trim().toLowerCase(),token=$("otp").value.trim();
- if(email!==ADMIN_EMAIL||!/^[0-9]{6}$/.test(token)){loginMessage("Enter the authorised email and 6-digit OTP.");return}
- $("verifyOtpBtn").disabled=true;loginMessage("Verifying OTP…");
- const {error}=await db.auth.verifyOtp({email,token,type:"email"});
- $("verifyOtpBtn").disabled=false;
- if(error){loginMessage("OTP verification failed: "+error.message);return}
- loginMessage("Checking admin access…");await checkAdmin();
-});
-async function initialise(){const {data:{session}}=await db.auth.getSession();if(session)await checkAdmin();else showLogin()}
-$("logoutBtn").addEventListener("click",async()=>{await db.auth.signOut();if(observer)observer.disconnect();$("storeFrame").src="about:blank";$("otpArea").classList.add("hidden");$("otp").value="";showLogin();loginMessage("You have been logged out.")});
+const ADMIN_EMAIL = "alokenterprisesbbsr@gmail.com";
+const BUCKET = "JEWELLERY";
 
-async function loadProducts(){
- $("editorMessage").textContent="Loading products…";
- const {data,error}=await db.from("products").select("*").order("created_at",{ascending:false});
- if(error){$("editorMessage").textContent="Could not load products: "+error.message;return}
- products=data||[];$("editorMessage").textContent=products.length+" products loaded.";
- if(!$("storeFrame").src||$("storeFrame").getAttribute("src")==="about:blank")$("storeFrame").src="/";
- else decoratePreview();
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+let editingId = null;
+let existingImageUrl = "";
+
+function showMessage(text) {
+  $("message").textContent = text;
 }
-function decoratePreview(){
- const frame=$("storeFrame");
- try{
-  const doc=frame.contentDocument;if(!doc||!doc.getElementById("productGrid"))return;
-  const grid=doc.getElementById("productGrid");
-  grid.querySelectorAll(".admin-edit-chip").forEach(x=>x.remove());
-  const cards=[...grid.querySelectorAll(".product-card")];
-  cards.forEach((card,index)=>{
-   const product=products.filter(p=>p.is_active!==false)[index];if(!product)return;
-   const chip=doc.createElement("button");chip.className="admin-edit-chip";chip.type="button";chip.textContent="✎ Edit";
-   chip.style.cssText="position:absolute;z-index:8;top:48px;right:10px;background:#67483b;color:#fff;border:1px solid #fff;border-radius:5px;padding:9px 12px;font:700 11px Arial;cursor:pointer;box-shadow:0 3px 12px #0003";
-   const photo=card.querySelector(".product-photo");if(photo){photo.style.position="relative";photo.appendChild(chip)}
-   chip.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();openForm(product)});
+function showFormMessage(text) {
+  $("formMessage").textContent = text;
+}
+
+function showLogin() {
+  $("loginPanel").classList.remove("hidden");
+  $("dashboard").classList.add("hidden");
+  $("logoutBtn").classList.add("hidden");
+}
+function showDashboard() {
+  $("loginPanel").classList.add("hidden");
+  $("dashboard").classList.remove("hidden");
+  $("logoutBtn").classList.remove("hidden");
+}
+
+async function checkAdmin() {
+  const { data, error } = await db.rpc("is_store_admin");
+  if (error || data !== true) {
+    await db.auth.signOut();
+    showLogin();
+    showMessage("This account is not authorised to access the store admin panel.");
+    return false;
+  }
+  showDashboard();
+  await loadProducts();
+  await loadOrders();
+  return true;
+}
+
+// Send a one-time email code. Account creation is disabled.
+$("sendOtpBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim().toLowerCase();
+
+  if (email !== ADMIN_EMAIL) {
+    showMessage("This email is not authorised for admin login.");
+    return;
+  }
+
+  $("sendOtpBtn").disabled = true;
+  showMessage("Sending your verification code...");
+
+  const { error } = await db.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false }
   });
- }catch(e){$("editorMessage").textContent="Preview controls could not attach. Refresh the preview."}
-}
-$("storeFrame").addEventListener("load",()=>{setTimeout(decoratePreview,900);});
-$("refreshBtn").addEventListener("click",()=>{$("storeFrame").contentWindow.location.reload();setTimeout(loadProducts,1100)});
-function openForm(p=null){
- editingId=p?.id??null;existingImageUrl=p?.image_url||"";
- $("modalTitle").textContent=p?"Edit product":"Add product";
- $("name").value=p?.name||"";$("category").value=p?.category||"";$("price").value=p?.price??"";
- $("comparePrice").value=p?.compare_at_price??"";$("tag").value=p?.tag||"";
- $("description").value=p?.description||"";$("active").checked=p?.is_active!==false;$("image").value="";
- $("deleteBtn").classList.toggle("hidden",!p);$("saveBtn").textContent=p?"Save changes":"Add product";
- formMessage("");$("modalBackdrop").classList.remove("hidden");
-}
-function closeForm(){$("modalBackdrop").classList.add("hidden");$("productForm").reset();editingId=null;existingImageUrl=""}
-$("addBtn").addEventListener("click",()=>openForm());
-$("closeModal").addEventListener("click",closeForm);$("cancelBtn").addEventListener("click",closeForm);
-$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeForm()});
-async function uploadImage(file){
- const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
- const path="products/"+crypto.randomUUID()+"."+ext;
- const {error}=await db.storage.from(BUCKET).upload(path,file,{upsert:false,contentType:file.type});
- if(error)throw error;
- return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-}
-$("productForm").addEventListener("submit",async e=>{
- e.preventDefault();$("saveBtn").disabled=true;formMessage("Saving product…");
- try{
-  let imageUrl=existingImageUrl;const file=$("image").files[0];if(file)imageUrl=await uploadImage(file);
-  const row={name:$("name").value.trim(),category:$("category").value.trim(),price:Number($("price").value),
-   compare_at_price:$("comparePrice").value?Number($("comparePrice").value):null,tag:$("tag").value.trim(),
-   description:$("description").value.trim(),image_url:imageUrl,is_active:$("active").checked};
-  let result=editingId?await db.from("products").update(row).eq("id",editingId):await db.from("products").insert(row);
-  if(result.error)throw result.error;
-  formMessage("Saved. Updating storefront preview…");await loadProducts();
-  $("storeFrame").contentWindow.location.reload();setTimeout(decoratePreview,1300);
-  setTimeout(closeForm,700);
- }catch(err){formMessage("Could not save: "+err.message)}
- finally{$("saveBtn").disabled=false}
+
+  $("sendOtpBtn").disabled = false;
+
+  if (error) {
+    showMessage("Could not send OTP: " + error.message);
+    return;
+  }
+
+  $("otpArea").classList.remove("hidden");
+  showMessage("OTP sent. Check your inbox, including the spam folder.");
 });
-$("deleteBtn").addEventListener("click",async()=>{
- if(!editingId||!confirm("Delete this product permanently?"))return;
- $("deleteBtn").disabled=true;const {error}=await db.from("products").delete().eq("id",editingId);
- $("deleteBtn").disabled=false;if(error){formMessage("Could not delete: "+error.message);return}
- closeForm();await loadProducts();$("storeFrame").contentWindow.location.reload();
+
+// Verify the one-time code, then check admin membership.
+$("verifyOtpBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim().toLowerCase();
+  const token = $("otp").value.trim();
+
+  if (email !== ADMIN_EMAIL) {
+    showMessage("This email is not authorised.");
+    return;
+  }
+  if (!/^[0-9]{6}$/.test(token)) {
+    showMessage("Please enter the 6-digit OTP.");
+    return;
+  }
+
+  $("verifyOtpBtn").disabled = true;
+  showMessage("Verifying code...");
+
+  const { error } = await db.auth.verifyOtp({
+    email,
+    token,
+    type: "email"
+  });
+
+  $("verifyOtpBtn").disabled = false;
+
+  if (error) {
+    showMessage("OTP verification failed: " + error.message);
+    return;
+  }
+
+  showMessage("Checking admin permission...");
+  const allowed = await checkAdmin();
+
+  if (!allowed) return;
+  $("otp").value = "";
 });
+
+// Only show the dashboard for a signed-in, authorised admin.
+async function initialise() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    await checkAdmin();
+  } else {
+    showLogin();
+  }
+}
+
+$("logoutBtn").addEventListener("click", async () => {
+  await db.auth.signOut();
+  editingId = null;
+  showLogin();
+  $("otpArea").classList.add("hidden");
+  $("otp").value = "";
+  showMessage("You have been logged out.");
+});
+
+
+async function loadOrders() {
+  const box = $("ordersList");
+  if (!box) return;
+  box.textContent = "Loading customer orders...";
+  const {data,error} = await db.from("customer_orders")
+    .select("id,order_number,status,total,customer_name,phone,address,city,state,postal_code,created_at,customer_order_items(product_name,quantity,unit_price)")
+    .order("created_at",{ascending:false}).limit(100);
+  if (error) { box.textContent = "Could not load orders: " + error.message; return; }
+  if (!data || !data.length) { box.textContent = "No customer orders yet."; return; }
+  const statuses = ["placed","confirmed","packed","shipped","out_for_delivery","delivered","cancelled"];
+  box.innerHTML = "";
+  data.forEach(order => {
+    const card = document.createElement("div");
+    card.style.cssText = "border-top:1px solid #eee;padding:15px 0";
+    const title = document.createElement("strong"); title.textContent = order.order_number + " · ₹" + Number(order.total).toFixed(2);
+    const details = document.createElement("p"); details.className = "small";
+    details.textContent = order.customer_name + " · " + order.phone + " · " + order.address + ", " + order.city + ", " + order.state + " - " + order.postal_code;
+    const items = document.createElement("p"); items.className = "small";
+    items.textContent = (order.customer_order_items || []).map(i => i.product_name + " × " + i.quantity).join(" | ");
+    const row = document.createElement("div"); row.className = "actions";
+    const select = document.createElement("select");
+    select.style.cssText = "max-width:220px;margin:0";
+    statuses.forEach(s => { const o=document.createElement("option");o.value=s;o.textContent=s.replaceAll("_"," ");if(s===order.status)o.selected=true;select.append(o); });
+    const save = document.createElement("button"); save.textContent = "Update tracking";
+    save.addEventListener("click", async () => {
+      save.disabled = true;
+      const {error} = await db.from("customer_orders").update({status:select.value,updated_at:new Date().toISOString()}).eq("id",order.id);
+      save.disabled = false;
+      if(error){alert("Could not update order: "+error.message);return;}
+      alert("Order tracking updated."); await loadOrders();
+    });
+    row.append(select,save); card.append(title,details,items,row); box.append(card);
+  });
+}
+$("ordersRefreshBtn")?.addEventListener("click",loadOrders);
+
+async function loadProducts() {
+  $("productsList").textContent = "Loading products...";
+
+  const { data, error } = await db
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    $("productsList").textContent = "Could not load products: " + error.message;
+    return;
+  }
+
+  const list = $("productsList");
+  list.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    list.textContent = "No products added yet.";
+    return;
+  }
+
+  data.forEach(product => {
+    const item = document.createElement("div");
+    item.className = "product";
+
+    const img = document.createElement("img");
+    img.alt = product.name || "Product";
+    img.src = product.image_url || "";
+    img.onerror = () => { img.style.visibility = "hidden"; };
+
+    const info = document.createElement("div");
+    info.className = "product-info";
+
+    const title = document.createElement("strong");
+    title.textContent = product.name || "Unnamed product";
+
+    const details = document.createElement("p");
+    details.textContent =
+      "₹" + product.price + " · " +
+      (product.category || "Uncategorised") + " · " +
+      (product.is_active ? "Active" : "Inactive");
+
+    info.append(title, details);
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const edit = document.createElement("button");
+    edit.textContent = "Edit";
+    edit.className = "secondary";
+    edit.addEventListener("click", () => editProduct(product));
+
+    const remove = document.createElement("button");
+    remove.textContent = "Delete";
+    remove.className = "danger";
+    remove.addEventListener("click", () => deleteProduct(product.id));
+
+    actions.append(edit, remove);
+    item.append(img, info, actions);
+    list.append(item);
+  });
+}
+
+function editProduct(product) {
+  editingId = product.id;
+  existingImageUrl = product.image_url || "";
+
+  $("formTitle").textContent = "Edit Product";
+  $("name").value = product.name || "";
+  $("category").value = product.category || "";
+  $("price").value = product.price ?? "";
+  $("comparePrice").value = product.compare_at_price ?? "";
+  $("tag").value = product.tag || "";
+  $("description").value = product.description || "";
+  $("active").checked = product.is_active !== false;
+  $("image").value = "";
+  $("saveBtn").textContent = "Update Product";
+  $("cancelBtn").classList.remove("hidden");
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function resetForm() {
+  editingId = null;
+  existingImageUrl = "";
+  $("productForm").reset();
+  $("active").checked = true;
+  $("formTitle").textContent = "Add Product";
+  $("saveBtn").textContent = "Save Product";
+  $("cancelBtn").classList.add("hidden");
+  showFormMessage("");
+}
+$("cancelBtn").addEventListener("click", resetForm);
+
+async function uploadImage(file) {
+  const extension = file.name.split(".").pop().toLowerCase();
+  const safeExtension = /^[a-z0-9]+$/.test(extension) ? extension : "jpg";
+  const path = "products/" + crypto.randomUUID() + "." + safeExtension;
+
+  const { error } = await db.storage
+    .from(BUCKET)
+    .upload(path, file, { upsert: false, contentType: file.type });
+
+  if (error) throw error;
+
+  const { data } = db.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+$("productForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  $("saveBtn").disabled = true;
+  showFormMessage("Saving product...");
+
+  try {
+    let imageUrl = existingImageUrl;
+    const file = $("image").files[0];
+
+    if (file) {
+      imageUrl = await uploadImage(file);
+    }
+
+    const product = {
+      name: $("name").value.trim(),
+      category: $("category").value.trim(),
+      price: Number($("price").value),
+      compare_at_price: $("comparePrice").value
+        ? Number($("comparePrice").value) : null,
+      tag: $("tag").value.trim(),
+      description: $("description").value.trim(),
+      image_url: imageUrl,
+      is_active: $("active").checked
+    };
+
+    let result;
+    if (editingId) {
+      result = await db.from("products").update(product).eq("id", editingId);
+    } else {
+      result = await db.from("products").insert(product);
+    }
+
+    if (result.error) throw result.error;
+
+    showFormMessage("Product saved successfully.");
+    resetForm();
+    await loadProducts();
+  } catch (error) {
+    showFormMessage("Error: " + error.message);
+  } finally {
+    $("saveBtn").disabled = false;
+  }
+});
+
+async function deleteProduct(id) {
+  if (!confirm("Are you sure you want to delete this product?")) return;
+
+  const { error } = await db.from("products").delete().eq("id", id);
+
+  if (error) {
+    alert("Could not delete product: " + error.message);
+    return;
+  }
+
+  await loadProducts();
+}
+
+$("refreshBtn").addEventListener("click", loadProducts);
+
 initialise();
 </script>
 </body>
